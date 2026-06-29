@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zine machine — the home zine press</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Special+Elite&family=Playfair+Display:wght@700&family=Lora&family=Oswald:wght@600&family=Permanent+Marker&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F5F1;
+    --paper2:#FFFFFF;
+    --ink:#1A1A1A;
+    --line:#DAD8D2;
+    --muted:#62655F;
+    --scrap:#3A57AD;
+    --hl:#3A57AD;
+    --hl-d:#2C4690;
+    --focus:#3A57AD;
+    --cobalt:#3A57AD;
+    --blockhead:#3A57AD;
+    --pop:#D1D001;
+    --sans:"Helvetica Neue",Helvetica,sans-serif;
+    --mono:"Manrope","Helvetica Neue",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--mono);
+    color:var(--ink);
+    background:var(--paper);
+    min-height:100vh;
+    padding:0 0 60px;
+    font-size:14px;
+  }
+  ::selection{background:var(--hl);color:var(--paper)}
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='pg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.55  0 0 0 0 0.53  0 0 0 0 0.48  0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23pg)'/%3E%3C/svg%3E");
+    background-size:200px 200px;opacity:1;
+  }
+  .masthead, .wrap{position:relative;z-index:1}
+
+  /* ---------- masthead ---------- */
+  .masthead{max-width:1180px;margin:0 auto;padding:48px 24px 8px}
+  .spec-meta{
+    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    font-size:10px;letter-spacing:.14em;text-transform:lowercase;color:var(--muted);
+    border-bottom:1.5px solid var(--ink);padding-bottom:9px;margin-bottom:40px;
+  }
+  .wordmark{
+    display:block;font-family:var(--sans);font-weight:700;text-transform:lowercase;
+    font-size:clamp(46px,11vw,128px);line-height:.9;letter-spacing:-.045em;
+    margin:0 0 6px;color:var(--ink);
+  }
+  .intro{display:flex;gap:52px;flex-wrap:wrap;align-items:flex-start;margin-top:38px}
+  .bluescrap{
+    width:100%;color:#EAF0F7;
+    background-color:var(--scrap);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='fb'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23fb)'/%3E%3C/svg%3E");
+    background-size:160px 160px;
+    padding:34px 36px;transform:none;border:none;
+  }
+  .bluescrap .lede{color:#EAF0F7}
+  .bluescrap .lede b{color:#FFFFFF}
+  .lede{font-size:13.5px;line-height:1.8;max-width:78ch}
+  .printrow{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:28px;
+    margin-top:22px;padding-top:20px;border-top:1px dashed rgba(234,240,247,.4);
+  }
+  .printcard svg{
+    width:96px;height:auto;display:block;margin-bottom:10px;
+    stroke:var(--pop);fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;opacity:1;
+  }
+  .printcard p{font-size:12px;line-height:1.65}
+  .bluescrap p + p{margin-top:14px}
+  .lede b{font-weight:700}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  .section-label{
+    display:flex;align-items:baseline;gap:16px;
+    border-top:1px solid var(--ink);padding-top:10px;margin:56px 0 26px;
+  }
+  .section-label .meta{font-size:10px;letter-spacing:.14em;text-transform:lowercase;color:var(--muted)}
+  .section-label .num{color:var(--focus);font-weight:600}
+  .section-label .r{margin-left:auto;text-align:right}
+  .section-label .title{
+    font-family:var(--sans);font-weight:700;font-size:22px;letter-spacing:-.02em;
+    text-transform:lowercase;text-align:left;color:var(--ink);
+  }
+  .titlefield{
+    font-family:var(--sans);font-weight:700;font-size:22px;letter-spacing:-.02em;
+    text-transform:lowercase;color:var(--ink);
+    background:transparent;border:none;border-bottom:1px dashed var(--line);
+    padding:1px 0 3px;flex:1;min-width:0;
+  }
+  .titlefield:hover{border-bottom-color:var(--muted)}
+  .titlefield:focus{outline:none;border-bottom-color:var(--focus)}
+  .titlefield::placeholder{color:var(--muted);opacity:.65}
+  .nb-meta{
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;
+    margin:-2px 0 26px;padding:0 2px;
+  }
+  .nb-hint{font-family:var(--mono);font-size:11px;color:var(--focus);letter-spacing:.02em}
+  .nb-name{
+    display:flex;align-items:center;gap:9px;margin-left:auto;
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  }
+  .nb-name input{
+    font-family:var(--mono);font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink);
+    background:var(--paper2);border:1px solid var(--line);border-radius:2px;padding:6px 9px;min-width:180px;
+  }
+  .nb-name input:focus{outline:none;border-color:var(--focus)}
+  .epigraph{
+    position:relative;margin:16px 0 0;padding:24px 28px;
+    background-color:var(--paper2);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='eg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16  0 0 0 0 0.18  0 0 0 0 0.22  0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23eg)'/%3E%3C/svg%3E");
+    background-size:160px 160px;
+    border:1px solid var(--line);border-left:3px solid var(--scrap);
+  }
+  .epigraph blockquote{
+    margin:0;font-family:var(--sans);font-weight:500;font-size:18px;line-height:1.5;
+    letter-spacing:-.01em;color:var(--ink);
+  }
+  .epigraph .attrib{
+    display:block;margin-top:15px;font-style:normal;
+    font-family:var(--sans);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--ink);
+  }
+  .epigraph cite{
+    display:block;margin-top:3px;font-style:normal;
+    font-family:var(--mono);font-size:10px;line-height:1.6;color:var(--muted);
+  }
+
+  /* ---------- format picker ---------- */
+  .formatbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .fmt{position:relative;cursor:pointer}
+  .fmt input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .fmt span{
+    display:block;border:1px solid var(--ink);background:var(--paper2);
+    padding:10px 14px;font-size:12px;line-height:1.55;
+  }
+  .fmt b{display:block;font-family:var(--sans);font-weight:600;font-size:14px;text-transform:lowercase}
+  .fmt input:checked + span{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .fmt input:checked + span b{color:var(--paper)}
+  .fmt input:focus-visible + span{outline:2px solid var(--focus);outline-offset:2px}
+  .countbox{display:flex;gap:8px;align-items:center;font-size:12px}
+  .countbox label{letter-spacing:.14em;text-transform:lowercase;font-size:10px;color:var(--muted)}
+  .countbox select{
+    font-family:inherit;font-size:13px;font-weight:600;border:1px solid var(--ink);
+    background:var(--paper2);padding:8px 10px;cursor:pointer;color:var(--ink);
+  }
+  .countbox select:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+  /* ---------- panel entries ---------- */
+  .panels{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:34px 30px}
+  .card{border-top:1px solid var(--ink);padding:12px 0 6px;position:relative}
+  .card h3{
+    font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:lowercase;
+    display:flex;justify-content:space-between;align-items:baseline;margin:0 0 12px;
+    color:var(--muted);
+  }
+  .card h3 .no{color:var(--focus);font-size:10px}
+  .thumb{
+    width:100%;height:auto;display:block;background:#E8E3CF;
+    outline:1px solid var(--ink);margin-bottom:12px;cursor:pointer;
+  }
+  .thumb.drag{outline:2px dashed var(--focus);outline-offset:-2px}
+  .field{margin-bottom:10px}
+  .field label{
+    display:block;font-size:10px;letter-spacing:.14em;text-transform:lowercase;
+    margin-bottom:4px;color:var(--muted);
+  }
+  .field input[type=text]{
+    width:100%;font-family:inherit;font-size:13px;line-height:1.6;
+    border:none;border-bottom:1px solid var(--ink);background:transparent;
+    padding:4px 2px 5px;color:var(--ink);border-radius:0;
+  }
+  .field textarea{
+    width:100%;font-family:inherit;font-size:13px;line-height:24px;
+    border:none;border-bottom:1px solid var(--ink);border-radius:0;
+    background:
+      repeating-linear-gradient(transparent 0 23px, var(--line) 23px 24px),
+      var(--paper2);
+    padding:0 6px;color:var(--ink);
+    resize:vertical;min-height:96px;
+  }
+  .field input[type=text]:focus, .field textarea:focus{
+    outline:none;border-bottom:2px solid var(--focus);
+  }
+  button:focus-visible,
+  .swatch input:focus-visible + span, .seg input:focus-visible + span{
+    outline:2px solid var(--focus);outline-offset:1px;
+  }
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+  .filebtn{
+    display:inline-block;cursor:pointer;font-family:inherit;color:var(--ink);
+    font-size:11px;letter-spacing:.08em;text-transform:lowercase;font-weight:600;
+    border:1px solid var(--ink);background:var(--paper2);padding:7px 10px;
+  }
+  .filebtn:hover{background:var(--ink);color:var(--paper)}
+  .clearimg{
+    font-family:inherit;font-size:11px;letter-spacing:.06em;cursor:pointer;
+    background:none;border:none;text-decoration:underline;color:var(--muted);padding:6px 2px;
+  }
+  .clearimg:hover{color:var(--focus)}
+  .imgchips{display:flex;gap:6px;flex-wrap:wrap}
+  .imgchips .chip{
+    padding:0;border:1px solid var(--ink);background:none;cursor:pointer;
+    line-height:0;position:relative;
+  }
+  .imgchips .chip img{width:30px;height:30px;object-fit:cover;display:block}
+  .imgchips .chip:hover::after{
+    content:"\00d7";position:absolute;inset:0;
+    background:rgba(42,36,28,.65);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;
+  }
+
+  .swatches{display:flex;gap:7px;flex-wrap:wrap}
+  .swatch{position:relative;cursor:pointer}
+  .swatch input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .swatch span{display:block;width:24px;height:24px;border:1px solid var(--ink)}
+  .swatch input:checked + span{box-shadow:0 0 0 2px var(--focus)}
+  .sw-auto span{background:linear-gradient(135deg,#FCFAF5 50%,#16140F 50%)}
+  .fontsel{
+    width:100%;font-family:inherit;font-size:12px;border:1px solid var(--line);
+    background:var(--paper2);padding:7px 8px;color:var(--ink);cursor:pointer;
+  }
+  .fontsel:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .grp{border-top:1px dashed var(--line);margin-top:8px}
+  .grp summary{
+    cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;
+    padding:9px 0;font-size:10px;letter-spacing:.14em;text-transform:lowercase;
+    color:var(--muted);font-weight:600;
+  }
+  .grp summary::-webkit-details-marker{display:none}
+  .grp summary::after{content:"+";font-size:13px;line-height:1}
+  .grp[open] summary::after{content:"\2212"}
+  .grp summary:hover{color:var(--ink)}
+  .grp summary:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .grp .field:last-child{margin-bottom:14px}
+  .inks .swatch span{width:22px;height:22px}
+  .sw-none span{
+    background:linear-gradient(to top left, transparent 46%, var(--ink) 46% 54%, transparent 54%), var(--paper2);
+  }
+
+  .seg{display:flex;border:1px solid var(--ink);overflow:hidden;width:max-content}
+  .seg label{position:relative;cursor:pointer}
+  .seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .seg span{
+    display:block;padding:5px 9px;font-size:11px;font-weight:600;background:var(--paper2);
+    border-right:1px solid var(--ink);
+  }
+  .seg label:last-child span{border-right:none}
+  .seg input:checked + span{background:var(--ink);color:var(--paper)}
+
+  /* ---------- press sheets ---------- */
+  .press{background:none}
+  #sheets{display:grid;gap:26px}
+  #sheets figure{margin:0}
+  #sheets canvas{width:100%;height:auto;display:block;outline:1px solid var(--ink);box-shadow:0 2px 8px rgba(30,45,60,.12)}
+  #sheets figcaption{
+    font-size:10px;letter-spacing:.14em;text-transform:lowercase;
+    margin-top:8px;color:var(--muted);
+  }
+  .press .controls{
+    display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:24px;
+    border-top:1px solid var(--line);padding-top:18px;
+  }
+  .bigbtn{
+    font-family:var(--sans);font-weight:600;font-size:14px;
+    text-transform:lowercase;cursor:pointer;
+    background:var(--hl);color:var(--paper);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.68  0 0 0 0 0.8  0 0 0 0 0.87  0 0 0 0.2 0'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23t)'/%3E%3C/svg%3E");
+    border:1px solid var(--ink);padding:12px 22px;
+    transition:background .12s ease;
+  }
+  .bigbtn:hover{background:var(--hl-d)}
+  .bigbtn:active{background:var(--hl-d)}
+  .bigbtn[disabled]{opacity:.55;cursor:wait}
+  .bigbtn.alt{background:var(--paper2);color:var(--ink)}
+  .bigbtn.alt:hover{background:var(--ink);color:var(--paper)}
+  .ghostbtn{
+    font-family:inherit;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:lowercase;
+    background:var(--paper2);border:1px solid var(--ink);padding:11px 14px;cursor:pointer;color:var(--ink);
+  }
+  .ghostbtn:hover{background:var(--ink);color:var(--paper)}
+  .check{display:flex;gap:8px;align-items:center;font-size:12px;cursor:pointer}
+  .check input{width:15px;height:15px;accent-color:var(--focus);cursor:pointer}
+
+  /* ---------- folding guide ---------- */
+  .fold-steps{font-size:13px;line-height:1.8}
+  .fold-steps ol.steps{
+    list-style:none;padding:0;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:30px 26px;
+  }
+  .fold-steps li{margin:0;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .stepno{display:block;font-size:10px;letter-spacing:.14em;color:var(--focus);font-weight:600;margin-bottom:8px}
+  .steps svg{
+    width:110px;height:auto;display:block;margin:0 auto 10px;
+    stroke:var(--ink);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.85;
+  }
+  .steps p{font-size:12px;line-height:1.65;max-width:24ch}
+  .stepnote{margin-top:24px;font-size:12px;max-width:62ch}
+  .fold-steps em{font-style:normal;background:rgba(36,56,200,.16);padding:0 .2em}
+
+  /* ---------- colophon ---------- */
+  .colophon{
+    max-width:1180px;margin:70px auto 0;padding:14px 24px 0;
+    border-top:1px solid var(--ink);
+    font-size:10px;letter-spacing:.1em;text-transform:lowercase;
+    color:var(--muted);
+    display:flex;flex-wrap:wrap;gap:6px 30px;
+  }
+  .apps{
+    margin-top:22px;font-size:11px;letter-spacing:.06em;
+    color:var(--muted);
+  }
+
+  /* ---------- flip-through reader ---------- */
+  .reader{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center}
+  .reader[hidden]{display:none}
+  .reader-scrim{position:absolute;inset:0;background:rgba(32,26,18,.86)}
+  .reader-ui{position:relative;display:flex;flex-direction:column;gap:16px;align-items:center;max-width:96vw}
+  .book{
+    position:relative;display:flex;perspective:2200px;
+    width:min(92vw, 96vh, 880px);
+    aspect-ratio:1294/1000;
+    filter:drop-shadow(0 18px 38px rgba(0,0,0,.5));
+  }
+  .page{position:relative;width:50%;height:100%;background:#FCFAF5;cursor:pointer}
+  .page canvas{width:100%;height:100%;display:block}
+  .page.empty{visibility:hidden}
+  .page.left::after, .page.right::after{
+    content:"";position:absolute;top:0;bottom:0;width:7%;pointer-events:none;
+  }
+  .page.left::after{right:0;background:linear-gradient(to left, rgba(0,0,0,.16), transparent 80%)}
+  .page.right::after{left:0;background:linear-gradient(to right, rgba(0,0,0,.16), transparent 80%)}
+  .flipper{
+    position:absolute;left:50%;top:0;width:50%;height:100%;
+    transform-origin:left center;transform-style:preserve-3d;
+    transition:transform .65s cubic-bezier(.3,.7,.3,1);
+    pointer-events:none;visibility:hidden;z-index:2;
+  }
+  .flipper.on{visibility:visible}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#FCFAF5;overflow:hidden}
+  .face.back{transform:rotateY(180deg)}
+  .face canvas{width:100%;height:100%;display:block}
+  .reader-bar{
+    position:relative;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;
+    color:var(--paper);font-size:13px;
+  }
+  .reader-bar .where{letter-spacing:.14em;text-transform:lowercase;font-size:11px;min-width:14ch;text-align:center}
+  .rbtn{
+    font-family:inherit;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:lowercase;
+    background:var(--paper2);color:var(--ink);border:1px solid var(--ink);
+    padding:9px 14px;cursor:pointer;
+  }
+  .rbtn:hover{background:var(--hl);color:var(--paper)}
+  .rbtn:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+  .rbtn[disabled]{opacity:.4;cursor:default}
+  .rbtn[disabled]:hover{background:var(--paper2)}
+
+  @media (prefers-reduced-motion: reduce){
+    .bigbtn{transition:none}
+    .flipper{transition:none}
+  }
+  @media (max-width:560px){
+    .masthead{padding-top:30px}
+    .section-label .r{display:none}
+  }
+  #risoBtn{
+    background:var(--ink);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.68  0 0 0 0 0.8  0 0 0 0 0.87  0 0 0 0.2 0'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23t)'/%3E%3C/svg%3E");
+    color:var(--paper);border-color:var(--hl-d);
+  }
+  #risoBtn:hover{background:var(--hl-d);color:var(--paper)}
+
+  /* ===== invoice-style stacked blocks ===== */
+  .block{
+    background:var(--paper2);
+    border:1px solid var(--line);
+    padding:0;margin:0 0 22px;          /* gap between blocks */
+  }
+  .block > .section-label{
+    margin:0;border-top:none;
+    background:var(--blockhead);color:#EAF0F7;
+    display:flex;align-items:baseline;gap:16px;
+    padding:11px 18px;
+  }
+  .block > .section-label .meta{color:#C3D2EE}
+  .block > .section-label .num{color:#FFFFFF;font-weight:600}
+  .block > .section-label .title{color:#FFFFFF;text-transform:lowercase}
+  .block > .section-label .r{color:#C3D2EE}
+  .block-body{padding:20px 18px}
+  /* the intro scrap becomes the top block, full-bleed blue */
+
+  /* ===== field-notes journal ===== */
+  .entry{margin:0 0 22px}
+  .meta-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;padding:18px 26px;border-bottom:1px solid var(--line);
+  }
+  .de-cols{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    background:linear-gradient(90deg,
+      transparent calc(50% - 7px), rgba(26,26,26,.05) 50%, transparent calc(50% + 7px));
+  }
+  .de-col{padding:20px 26px}
+  .de-cols2{border-top:1px solid var(--line)}
+  .de-col:first-child{border-right:1px solid var(--line)}
+  .de-col h4{
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--focus);margin:0 0 9px;font-weight:600;
+  }
+  .de-col textarea{
+    width:100%;min-height:150px;resize:vertical;box-sizing:border-box;
+    font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--ink);
+    background:var(--paper2);border:1px solid var(--line);border-radius:2px;padding:11px 12px;
+  }
+  .de-col textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 2px rgba(58,87,173,.15)}
+  .entry-tools{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .iconbtn{
+    font-family:var(--mono);font-size:11px;cursor:pointer;
+    background:none;border:1px solid rgba(234,240,247,.5);color:#EAF0F7;
+    padding:3px 10px;border-radius:2px;
+  }
+  .iconbtn:hover{background:rgba(255,255,255,.15)}
+  .addentry{margin:4px 0 30px}
+  @media (max-width:440px){
+    .de-cols{grid-template-columns:1fr;background:none}
+    .de-col:first-child{border-right:none;border-bottom:1px solid var(--line)}
+  }
+
+  /* ===== media attachments ===== */
+  .media-sec{padding:16px 26px;border-top:1px solid var(--line)}
+  .media-sec h4{
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--focus);margin:0 0 10px;font-weight:600;
+  }
+  .attachbtn{
+    font-family:var(--mono);font-size:11px;cursor:pointer;
+    background:var(--paper2);border:1px solid var(--line);color:var(--ink);
+    padding:6px 12px;border-radius:2px;
+  }
+  .attachbtn:hover{border-color:var(--focus);color:var(--focus)}
+  .attachnote{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:7px}
+  .media-grid{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}
+  .media-item{position:relative;width:124px}
+  .media-item img, .media-item video{
+    width:124px;height:94px;object-fit:cover;display:block;
+    border:1px solid var(--line);border-radius:2px;background:var(--paper2);
+  }
+  .media-item audio{width:180px;display:block}
+  .media-file{
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    width:124px;height:94px;border:1px dashed var(--line);border-radius:2px;
+    font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px;background:var(--paper2);
+  }
+  .media-name{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:5px;word-break:break-word;line-height:1.4}
+  .media-rm{
+    position:absolute;top:-8px;right:-8px;width:21px;height:21px;border-radius:50%;
+    background:var(--ink);color:#fff;border:none;cursor:pointer;font-size:13px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .media-rm:hover{background:var(--hl-d)}
+  .media-loading{font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0}
+  @media print{ .attachbtn, .attachnote, .media-rm{display:none} .media-item video, .media-item audio{display:none} }
+
+</style>
+</head>
+<body>
+<header class="masthead">
+  <p class="spec-meta"><span>field_notes — a double-entry journal for site-based observation</span><span>georgia state university environmental media studio</span></p>
+  <h1 class="wordmark" data-word="field notes">field notes</h1>
+  <div class="intro">
+    <div class="bluescrap"><p class="lede">A field journal for working with places and things. Keep notes across as many site visits as your research takes. These entries invite you to <b>record</b> what you see and experience, and then <b>respond</b> to those happenings through speculation, drawing out new relations, and asking some more questions about what might come next. Stamp each entry with the date, time, weather, and place, write as you observe, and your notes are saved right here to return to, add to, and export whenever you need them.</p>
+    </div>
+  </div>
+  <div class="epigraph">
+    <blockquote>&ldquo;Sometimes the aim of research may be to disrupt the reassurance of the apparently familiar (where, you suspect, the very familiarity can be obscuring) precisely by rendering it strange.&rdquo;</blockquote>
+    <span class="attrib">Doreen Massey, &ldquo;Imagining the Field&rdquo;</span>
+    <cite>In <em>Using Social Theory: Thinking through Research</em>, ed. Michael Pryke, Gillian Rose, and Sarah Whatmore (London: Sage, 2003), 80.</cite>
+  </div>
+</header>
+<main class="wrap">
+  <div class="section-label"><span class="meta num">1.0</span><input class="titlefield" id="nbTitle" type="text" placeholder="name your notebook…" aria-label="Notebook title" maxlength="80"><span class="meta r">record &middot; respond</span></div>
+  <div class="nb-meta">
+    <span class="nb-hint">&uarr; give your notebook a title, and add your name &rarr;</span>
+    <label class="nb-name">your name <input id="nbName" type="text" placeholder="first &amp; last" aria-label="Your name" maxlength="60"></label>
+  </div>
+
+  <div id="entries"></div>
+
+  <button type="button" class="bigbtn addentry" id="addBtn">+ new field-note entry</button>
+
+  <div class="section-label"><span class="meta num">2.0</span><span class="title">keep your notebook</span><span class="meta r">saved on this device</span></div>
+  <div class="block"><div class="section-label"><span class="meta num">&nbsp;</span><span class="title">save, export &amp; restore</span><span class="meta r">your data stays with you</span></div>
+  <div class="block-body">
+    <p class="lede" style="margin-bottom:16px">Your entries are saved automatically in this browser. Export a copy to keep a backup, move to another device, or hand in your notebook. Print to save a PDF for the binder, or export a data file you can re-open here later.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button type="button" class="bigbtn" id="printBtn">print / save as pdf</button>
+      <button type="button" class="ghostbtn" id="exportBtn">export notebook file</button>
+      <button type="button" class="ghostbtn" id="importBtn">open notebook file</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </div></div>
+</main>
+<script>
+(function(){
+  "use strict";
+  const KEY = "ems_field_notes_v1";
+  const entriesEl = document.getElementById("entries");
+
+  /* ---------- IndexedDB for media blobs (photos/video/audio/files) ---------- */
+  const DB_NAME = "ems_field_notes_media", STORE = "blobs";
+  let _db = null;
+  function openDB(){
+    return new Promise((res, rej) => {
+      if(_db) return res(_db);
+      const r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore(STORE); };
+      r.onsuccess = () => { _db = r.result; res(_db); };
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function idbPut(id, blob){ return openDB().then(db => new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).put(blob,id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); })); }
+  function idbGet(id){ return openDB().then(db => new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readonly"); const rq=tx.objectStore(STORE).get(id); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); })); }
+  function idbDel(id){ return openDB().then(db => new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); })); }
+
+  /* ---------- object URL bookkeeping (avoid leaks on re-render) ---------- */
+  let liveUrls = [];
+  function objURL(blob){ const u = URL.createObjectURL(blob); liveUrls.push(u); return u; }
+  function revokeAll(){ liveUrls.forEach(u => URL.revokeObjectURL(u)); liveUrls = []; }
+
+  /* ---------- data ---------- */
+  function todayStamp(){
+    const d = new Date(), pad = n => String(n).padStart(2,"0");
+    return { date:d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()), time:pad(d.getHours())+":"+pad(d.getMinutes()) };
+  }
+  function uid(p){ return p + Date.now() + Math.random().toString(36).slice(2,6); }
+  function newEntry(){ const t = todayStamp(); return { id:uid("e"), date:t.date, time:t.time, weather:"", site:"", record:"", respond:"", associate:"", speculate:"", media:[] }; }
+  function load(){ try{ const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : {entries:[]}; }catch(e){ return {entries:[]}; } }
+  function save(){
+    // only lightweight text + media metadata go to localStorage (never blobs/dataUrls)
+    try{
+      const slim = { title: data.title || "", studentName: data.studentName || "", entries: data.entries.map(e => ({
+        id:e.id, date:e.date, time:e.time, weather:e.weather, site:e.site,
+        record:e.record, respond:e.respond, associate:e.associate, speculate:e.speculate,
+        media:(e.media||[]).map(m => ({ id:m.id, type:m.type, name:m.name, kind:m.kind }))
+      })) };
+      localStorage.setItem(KEY, JSON.stringify(slim));
+    }catch(e){
+      alert("Couldn't save — this browser's text storage may be full. Your media is stored separately and is fine; try exporting a backup.");
+    }
+  }
+
+  let data = load();
+  data.entries = (data.entries || []).map(e => Object.assign({media:[]}, e));
+  if(!data.entries.length){ data = { entries:[ newEntry() ] }; }
+  if(typeof data.title !== "string") data.title = "";
+  if(typeof data.studentName !== "string") data.studentName = "";
+
+  const titleInput = document.getElementById("nbTitle");
+  titleInput.value = data.title;
+  titleInput.addEventListener("input", () => { data.title = titleInput.value; save(); });
+
+  const nameInput = document.getElementById("nbName");
+  nameInput.value = data.studentName;
+  nameInput.addEventListener("input", () => { data.studentName = nameInput.value; save(); });
+
+  function kindOf(type){
+    if(!type) return "file";
+    if(type.indexOf("image/")===0) return "image";
+    if(type.indexOf("video/")===0) return "video";
+    if(type.indexOf("audio/")===0) return "audio";
+    return "file";
+  }
+  function blobToDataURL(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsDataURL(blob); }); }
+  function dataURLtoBlob(durl){
+    const c = durl.indexOf(","), head = durl.slice(0,c), b64 = durl.slice(c+1);
+    const mime = (head.match(/:(.*?);/)||[])[1] || "";
+    const bin = atob(b64), u = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u[i] = bin.charCodeAt(i);
+    return new Blob([u], {type:mime});
+  }
+
+  /* ---------- small builders ---------- */
+  let stampEls = new WeakMap();
+  function updateStamp(entry){ const el = stampEls.get(entry); if(el) el.textContent = (entry.date || "—") + (entry.time ? " · " + entry.time : ""); }
+  function fieldInput(entry, key, ph, type){
+    const inp = document.createElement("input");
+    inp.type = type || "text"; inp.placeholder = ph; inp.value = entry[key] || "";
+    inp.style.cssText = "width:100%;font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--paper2);border:1px solid var(--line);border-radius:2px;padding:7px 9px;box-sizing:border-box";
+    inp.addEventListener("input", () => { entry[key] = inp.value; save(); updateStamp(entry); });
+    return inp;
+  }
+  function metaCell(labelText, inputEl){
+    const wrap = document.createElement("div");
+    const lab = document.createElement("label");
+    lab.textContent = labelText;
+    lab.style.cssText = "display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px";
+    wrap.appendChild(lab); wrap.appendChild(inputEl); return wrap;
+  }
+  function colTextarea(entry, key, ph){
+    const ta = document.createElement("textarea");
+    ta.placeholder = ph; ta.value = entry[key] || "";
+    ta.addEventListener("input", () => { entry[key] = ta.value; save(); });
+    return ta;
+  }
+
+  /* ---------- media strip ---------- */
+  function renderMediaStrip(entry, grid){
+    grid.innerHTML = "";
+    (entry.media || []).forEach(m => {
+      const item = document.createElement("div"); item.className = "media-item";
+      const loading = document.createElement("div"); loading.className = "media-loading"; loading.textContent = "loading…";
+      item.appendChild(loading);
+      const rm = document.createElement("button"); rm.className = "media-rm"; rm.textContent = "×"; rm.title = "remove";
+      rm.addEventListener("click", () => {
+        if(!confirm("Remove this attachment?")) return;
+        idbDel(m.id);
+        entry.media = entry.media.filter(x => x !== m); save(); renderMediaStrip(entry, grid);
+      });
+      const name = document.createElement("div"); name.className = "media-name"; name.textContent = m.name || m.kind;
+      idbGet(m.id).then(blob => {
+        loading.remove();
+        if(!blob){ const f = document.createElement("div"); f.className="media-file"; f.textContent="(file missing)"; item.insertBefore(f, name); return; }
+        const url = objURL(blob);
+        let el;
+        if(m.kind === "image"){ el = document.createElement("img"); el.src = url; el.alt = m.name||""; }
+        else if(m.kind === "video"){ el = document.createElement("video"); el.src = url; el.controls = true; }
+        else if(m.kind === "audio"){ el = document.createElement("audio"); el.src = url; el.controls = true; }
+        else { el = document.createElement("a"); el.className = "media-file"; el.href = url; el.download = m.name||"file"; el.textContent = "↓ " + (m.name||"download file"); }
+        item.insertBefore(el, name);
+      }).catch(()=>{ loading.textContent = "(couldn't load)"; });
+      item.appendChild(rm); item.appendChild(name);
+      grid.appendChild(item);
+    });
+  }
+
+  /* ---------- entry ---------- */
+  function buildEntry(entry, idx){
+    const block = document.createElement("div"); block.className = "block entry";
+
+    const head = document.createElement("div"); head.className = "section-label";
+    const num = document.createElement("span"); num.className = "meta num"; num.textContent = "#" + (idx+1);
+    const title = document.createElement("span"); title.className = "title"; title.textContent = "field note";
+    const stamp = document.createElement("span"); stamp.className = "meta r"; stampEls.set(entry, stamp);
+    const tools = document.createElement("div"); tools.className = "entry-tools";
+    const dupBtn = document.createElement("button"); dupBtn.className = "iconbtn"; dupBtn.textContent = "duplicate";
+    const delBtn = document.createElement("button"); delBtn.className = "iconbtn"; delBtn.textContent = "delete";
+    tools.appendChild(dupBtn); tools.appendChild(delBtn);
+    head.appendChild(num); head.appendChild(title); head.appendChild(stamp); head.appendChild(tools);
+    block.appendChild(head); updateStamp(entry);
+
+    const meta = document.createElement("div"); meta.className = "meta-grid";
+    meta.appendChild(metaCell("date", fieldInput(entry,"date","2026-04-27","date")));
+    meta.appendChild(metaCell("time", fieldInput(entry,"time","11:09","time")));
+    meta.appendChild(metaCell("weather / conditions", fieldInput(entry,"weather","11°C, sunny")));
+    meta.appendChild(metaCell("site / location", fieldInput(entry,"site","Dashwood Bridge site")));
+    block.appendChild(meta);
+
+    const cols = document.createElement("div"); cols.className = "de-cols";
+    const c1 = document.createElement("div"); c1.className = "de-col";
+    const hh1 = document.createElement("h4"); hh1.textContent = "record — happenings";
+    c1.appendChild(hh1); c1.appendChild(colTextarea(entry,"record","Detailed, factual observations: people, places, things, sounds, measurements, times…"));
+    const c2 = document.createElement("div"); c2.className = "de-col";
+    const hh2 = document.createElement("h4"); hh2.textContent = "respond — what you made of it";
+    c2.appendChild(hh2); c2.appendChild(colTextarea(entry,"respond","Your reactions, questions, hunches, feelings, things to look up later…"));
+    cols.appendChild(c1); cols.appendChild(c2);
+    block.appendChild(cols);
+
+    const cols2 = document.createElement("div"); cols2.className = "de-cols de-cols2";
+    const c3 = document.createElement("div"); c3.className = "de-col";
+    const hh3 = document.createElement("h4"); hh3.textContent = "associate — fields of relation";
+    c3.appendChild(hh3); c3.appendChild(colTextarea(entry,"associate","What networks or relationships are surfacing? What patterns or echoes can you sense?"));
+    const c4 = document.createElement("div"); c4.className = "de-col";
+    const hh4 = document.createElement("h4"); hh4.textContent = "speculate — possible, probable, potential";
+    c4.appendChild(hh4); c4.appendChild(colTextarea(entry,"speculate","What do you not know? How could this be made strange? What might happen next, and what histories might be yet still obscured?"));
+    cols2.appendChild(c3); cols2.appendChild(c4);
+    block.appendChild(cols2);
+
+    // media section
+    const msec = document.createElement("div"); msec.className = "media-sec";
+    const mh = document.createElement("h4"); mh.textContent = "attachments — photos · video · audio · files";
+    msec.appendChild(mh);
+    const attach = document.createElement("button"); attach.className = "attachbtn"; attach.textContent = "+ attach media";
+    const fileInp = document.createElement("input"); fileInp.type = "file";
+    fileInp.accept = "image/*,video/*,audio/*"; fileInp.multiple = true; fileInp.style.display = "none";
+    attach.addEventListener("click", () => fileInp.click());
+    msec.appendChild(attach); msec.appendChild(fileInp);
+    const note = document.createElement("div"); note.className = "attachnote";
+    note.textContent = "Stored in this browser. Large videos may not save or export reliably — keep clips short, and export a backup to be safe.";
+    msec.appendChild(note);
+    const grid = document.createElement("div"); grid.className = "media-grid";
+    msec.appendChild(grid);
+    block.appendChild(msec);
+    renderMediaStrip(entry, grid);
+
+    fileInp.addEventListener("change", async e => {
+      const files = Array.from(e.target.files || []);
+      for(const f of files){
+        if(f.size > 25*1024*1024){
+          if(!confirm('"' + f.name + '" is large (' + Math.round(f.size/1048576) + ' MB). It may not save or export reliably. Attach anyway?')) continue;
+        }
+        const id = uid("m");
+        try{
+          await idbPut(id, f);
+          entry.media.push({ id, type:f.type, name:f.name, kind:kindOf(f.type) });
+          save(); renderMediaStrip(entry, grid);
+        }catch(err){
+          alert("Couldn't store \"" + f.name + "\" — this browser's storage may be full.");
+        }
+      }
+      e.target.value = "";
+    });
+
+    delBtn.addEventListener("click", () => {
+      if(data.entries.length === 1){ alert("This is your only entry — add another before deleting this one."); return; }
+      if(!confirm("Delete this field note and its attachments? This can't be undone.")) return;
+      (entry.media||[]).forEach(m => idbDel(m.id));
+      data.entries = data.entries.filter(e => e !== entry); save(); render();
+    });
+    dupBtn.addEventListener("click", async () => {
+      const copy = Object.assign({}, entry, { id:uid("e"), media:[] });
+      // duplicate the blobs too so the copy is independent
+      for(const m of (entry.media||[])){
+        const blob = await idbGet(m.id);
+        if(blob){ const nid = uid("m"); await idbPut(nid, blob); copy.media.push({ id:nid, type:m.type, name:m.name, kind:m.kind }); }
+      }
+      const at = data.entries.indexOf(entry);
+      data.entries.splice(at+1, 0, copy); save(); render();
+    });
+
+    return block;
+  }
+
+  function render(){
+    revokeAll();
+    entriesEl.innerHTML = "";
+    data.entries.forEach((e,i) => entriesEl.appendChild(buildEntry(e,i)));
+  }
+
+  document.getElementById("addBtn").addEventListener("click", () => {
+    data.entries.push(newEntry()); save(); render();
+    entriesEl.lastChild.scrollIntoView({behavior:"smooth", block:"center"});
+  });
+
+  /* ---------- export / import (media included as base64 for a portable backup) ---------- */
+  document.getElementById("exportBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("exportBtn"); const lbl = btn.textContent; btn.textContent = "preparing…"; btn.disabled = true;
+    try{
+      const out = { app:"ems_field_notes", version:1, title: data.title || "", studentName: data.studentName || "", entries: [] };
+      for(const e of data.entries){
+        const ne = { id:e.id, date:e.date, time:e.time, weather:e.weather, site:e.site, record:e.record, respond:e.respond, associate:e.associate, speculate:e.speculate, media:[] };
+        for(const m of (e.media||[])){
+          const blob = await idbGet(m.id);
+          const item = { id:m.id, type:m.type, name:m.name, kind:m.kind };
+          if(blob) item.dataUrl = await blobToDataURL(blob);
+          ne.media.push(item);
+        }
+        out.entries.push(ne);
+      }
+      const blob = new Blob([JSON.stringify(out)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const token = (s, fb) => ((s||"").replace(/[^a-zA-Z0-9]+/g,"").slice(0,40) || fb);
+      a.download = token(data.studentName,"Student") + "_" + token(data.title,"FieldNotebook") + "_" + todayStamp().date + ".json";
+      a.click(); URL.revokeObjectURL(a.href);
+    }catch(err){ alert("Export ran into trouble — if you have very large videos attached, try removing them and exporting again."); }
+    btn.textContent = lbl; btn.disabled = false;
+  });
+
+  document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+  document.getElementById("importFile").addEventListener("change", e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try{
+        const incoming = JSON.parse(reader.result);
+        if(!incoming.entries || !Array.isArray(incoming.entries)) throw new Error("bad");
+        if(!confirm("Open this notebook? It will replace what's currently here. Export first if you want a backup.")) return;
+        // restore media blobs into IndexedDB, strip dataUrls from the in-memory copy
+        for(const en of incoming.entries){
+          en.media = en.media || [];
+          for(const m of en.media){
+            if(m.dataUrl){ try{ await idbPut(m.id, dataURLtoBlob(m.dataUrl)); }catch(_){} delete m.dataUrl; }
+          }
+        }
+        data = {
+          title: (typeof incoming.title === "string" ? incoming.title : ""),
+          studentName: (typeof incoming.studentName === "string" ? incoming.studentName : ""),
+          entries: incoming.entries
+        };
+        titleInput.value = data.title; nameInput.value = data.studentName; save(); render();
+      }catch(err){ alert("That file couldn't be read as a field notebook."); }
+    };
+    reader.readAsText(file); e.target.value = "";
+  });
+
+  document.getElementById("printBtn").addEventListener("click", () => window.print());
+
+  render();
+})();
+</script>
+
+
+</body>
+</html>
